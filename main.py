@@ -11,6 +11,8 @@ import numpy as np
 import pandas as pd
 import nibabel as nib
 from nilearn.plotting.cm import _cmap_d as nilearn_cmaps
+import random
+import importlib
 import sys 
 sys.path.insert(0, '../pipeline_classification/src')
 
@@ -100,7 +102,7 @@ def train(config):
             x = x.to(ddpm.device)
             c = c.to(ddpm.device)
 
-            loss = ddpm(x.float(), c.float())
+            loss = ddpm(x.float())
             loss.backward()
 
             if loss_ema is None:
@@ -112,183 +114,8 @@ def train(config):
 
         print('Loss:', loss_ema)
 
-        if ep%10==0:
-            ddpm.eval()
-
-            with torch.no_grad():
-
-                n_sample = 1*config.n_classes
-
-                for w_i, w in enumerate(config.ws_test):
-
-                    x_gen, x_gen_store = ddpm.sample(
-                        n_sample, 
-                        (1, 48, 56, 48), 
-                        guide_w=w
-                        )
-
-                    # append some real images at bottom, order by class also
-                    x_real = torch.Tensor(x_gen.shape).to(ddpm.device)
-
-                    for k in range(config.n_classes):
-                        for j in range(int(n_sample/config.n_classes)):
-
-                            try: 
-                                idx = torch.squeeze((torch.argmax(c,dim=1) == k).nonzero())[j]
-
-                            except:
-                                idx = 0
-
-                            x_real[k+(j*config.n_classes)] = x[idx]
-
-                    x_all = torch.cat([x_gen, x_real])
-
-                    fig,ax = plt.subplots(
-                            nrows=2,
-                            ncols=config.n_classes,
-                            figsize=(config.n_classes*3, 10))
-
-                    affine = np.array([[   4.,    0.,    0.,  -98.],
-                                       [   0.,    4.,    0., -134.],
-                                       [   0.,    0.,    4.,  -72.],
-                                       [   0.,    0.,    0.,    1.]])
-
-                    for n in range(n_sample):
-
-                        img_xgen = nib.Nifti1Image(
-                            np.array(
-                                x_all[n].detach().cpu()
-                                )[0,:,:,:], 
-                            affine
-                            )
-
-                        img_xreal = nib.Nifti1Image(
-                            np.array(
-                                x_all[n_sample + n].detach().cpu()
-                                )[0,:,:,:], 
-                            affine
-                            )
-
-                        plotting.plot_glass_brain(
-                            img_xgen, 
-                            figure=fig, 
-                            cmap=nilearn_cmaps['cold_hot'], 
-                            plot_abs=False, 
-                            title='Generated ',
-                            axes=ax[0, n],
-                            display_mode = 'z')
-
-                        plotting.plot_glass_brain(
-                            img_xreal, 
-                            figure=fig, 
-                            cmap=nilearn_cmaps['cold_hot'], 
-                            plot_abs=False, 
-                            title='Real',
-                            axes=ax[1, n],
-                            display_mode = 'z')
-
-                    plt.savefig(f'{config.sample_dir}/images_ep{ep}_w{w}.png')
-                    plt.close()
-
+        if ep %10 == 0:
             torch.save(ddpm.state_dict(), config.save_dir + f"/model_{ep}.pth")
-
-
-def sample(config):
-    ddpm = DDPM(config)
-    ddpm.load_state_dict(
-        torch.load(
-            config.save_dir + f"/model_{config.test_iter}.pth", 
-            map_location=ddpm.device
-            )
-        )
-
-    # Data loader. 
-    dataset_file = f'{config.data_dir}/valid-{config.dataset}.csv'
-
-    dataset = ClassifDataset(
-        dataset_file, 
-        config.labels)
-
-    print(f'Dataset {config.dataset}: \n {len(dataset)} images.')
-
-
-    loader = DataLoader(
-        dataset, 
-        batch_size=config.batch_size, 
-        shuffle=False, 
-        )
-
-    x,c = next(iter(loader))
-
-    ddpm.eval()
-
-    with torch.no_grad():
-
-        n_sample = 1*config.n_classes
-
-        for w_i, w in enumerate(config.ws_test):
-
-            x_gen, x_gen_store = ddpm.sample(
-                n_sample, 
-                (1, 48, 56, 48), 
-                guide_w=w
-                )
-
-            # append some real images at bottom, order by class also
-            x_real = torch.Tensor(x_gen.shape).to(ddpm.device)
-
-            for k in range(config.n_classes):
-                for j in range(int(n_sample/config.n_classes)):
-                    x_real[k+(j*config.n_classes)] = x[k]
-
-            x_all = torch.cat([x_gen, x_real])
-
-            fig,ax = plt.subplots(
-                    nrows=2,
-                    ncols=config.n_classes,
-                    figsize=(config.n_classes*2, 10))
-
-            affine = np.array([[   4.,    0.,    0.,  -98.],
-                                   [   0.,    4.,    0., -134.],
-                                   [   0.,    0.,    4.,  -72.],
-                                   [   0.,    0.,    0.,    1.]])
-
-            for n in range(n_sample):
-
-                img_xgen = nib.Nifti1Image(
-                    np.array(
-                        x_all[n].detach().cpu()
-                        )[0,:,:,:], 
-                    affine
-                    )
-
-                img_xreal = nib.Nifti1Image(
-                    np.array(
-                        x_all[n_sample + n].detach().cpu()
-                        )[0,:,:,:], 
-                    affine
-                    )
-
-                plotting.plot_glass_brain(
-                    img_xgen, 
-                    figure=fig, 
-                    cmap=nilearn_cmaps['cold_hot'], 
-                    plot_abs=False, 
-                    title='Generated',
-                    axes=ax[0, n],
-                    display_mode = 'z')
-
-                plotting.plot_glass_brain(
-                    img_xreal, 
-                    figure=fig, 
-                    cmap=nilearn_cmaps['cold_hot'], 
-                    plot_abs=False, 
-                    title='Real',
-                    axes=ax[1, n],
-                    display_mode = 'z')
-
-            plt.savefig(f'{config.sample_dir}/test-images_ep{config.test_iter}_w{w}.png')
-            plt.close()
 
 def transfer(config):
     ddpm = DDPM(config)
@@ -301,11 +128,9 @@ def transfer(config):
 
     # Data loader. 
     dataset_file = f'{config.data_dir}/valid-{config.dataset}.csv'
-
     dataset = ClassifDataset(
         dataset_file, 
         config.labels)
-
     print(f'Dataset {config.dataset}: \n {len(dataset)} images.')
 
 
@@ -314,10 +139,6 @@ def transfer(config):
         batch_size=1, 
         shuffle=False, 
         )
-
-    # x,c = next(iter(source_loader))
-
-    # x_r,c_r = next(iter(target_loader))
 
     df_metrics = pd.DataFrame(
             columns = ['orig_label', 'target_label', 'orig-target', 'orig-gen', 'gen-target']
@@ -330,117 +151,114 @@ def transfer(config):
         with torch.no_grad():
 
             for i in range(config.n_classes):
-                x_r, c_r = dataset[n//config.n_classes*config.n_classes+i]
 
-                c_t = c_r.view(-1, c_r.shape[0])
+                class_dataset = dataset[dataset.get_original_labels()==dataset.label_list[i]]
 
-                for w_i, w in enumerate(config.ws_test):
+                x_t, c_t = random.choice(class_dataset)
 
-                    x_gen = ddpm.transfer(
-                        x, 
-                        c_t, 
-                        guide_w=w
-                        )
+                x_gen = ddpm.transfer(
+                x, x_t.unsqueeze(1) 
+                )
 
-                    fig,ax = plt.subplots(
-                            nrows=3,
-                            ncols=1,
-                            figsize=(5, 10))
+                fig,ax = plt.subplots(
+                        nrows=3,
+                        ncols=1,
+                        figsize=(5, 10))
 
-                    affine = np.array([[   4.,    0.,    0.,  -98.],
-                                       [   0.,    4.,    0., -134.],
-                                       [   0.,    0.,    4.,  -72.],
-                                       [   0.,    0.,    0.,    1.]])
+                affine = np.array([[   4.,    0.,    0.,  -98.],
+                                   [   0.,    4.,    0., -134.],
+                                   [   0.,    0.,    4.,  -72.],
+                                   [   0.,    0.,    0.,    1.]])
 
-                    img_xgen = nib.Nifti1Image(
-                        np.array(
-                            x_gen.detach().cpu()
-                            )[0,0,:,:,:], 
-                        affine
-                        )
+                img_xgen = nib.Nifti1Image(
+                    np.array(
+                        x_gen.detach().cpu()
+                        )[0,0,:,:,:], 
+                    affine
+                    )
 
-                    img_xreal = nib.Nifti1Image(
-                        np.array(
-                            x_r.detach().cpu()
-                            )[0,:,:,:], 
-                        affine
-                        )
+                img_xreal = nib.Nifti1Image(
+                    np.array(
+                        x_r.detach().cpu()
+                        )[0,:,:,:], 
+                    affine
+                    )
 
-                    img_xsrc = nib.Nifti1Image(
-                        np.array(
-                            x.detach().cpu()
-                            )[0,0,:,:,:], 
-                        affine
-                        )
+                img_xsrc = nib.Nifti1Image(
+                    np.array(
+                        x.detach().cpu()
+                        )[0,0,:,:,:], 
+                    affine
+                    )
 
-                    if n % 50 == 0:
+                c_idx = torch.argmax(c, dim=1)[0]
+                c_t_idx = torch.argmax(c_t, dim=1)[0]
 
-                        nib.save(img_xgen, f'{config.sample_dir}/gen-image_{n}-{config.dataset}_ep{config.test_iter}_w{w}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
-                        nib.save(img_xreal, f'{config.sample_dir}/trg-image_{n}-{config.dataset}_ep{config.test_iter}_w{w}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
-                        nib.save(img_xsrc, f'{config.sample_dir}/src-image_{n}-{config.dataset}_ep{config.test_iter}_w{w}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
+                if n % 50 == 0:
 
-                    c_idx = torch.argmax(c, dim=1)[0]
-                    c_t_idx = torch.argmax(c_t, dim=1)[0]
+                    nib.save(img_xgen, f'{config.sample_dir}/gen-image_{n}-{config.dataset}_ep{config.test_iter}_w{w}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
+                    nib.save(img_xreal, f'{config.sample_dir}/trg-image_{n}-{config.dataset}_ep{config.test_iter}_w{w}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
+                    nib.save(img_xsrc, f'{config.sample_dir}/src-image_{n}-{config.dataset}_ep{config.test_iter}_w{w}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
 
-                    corr_orig_target = get_correlation(img_xsrc, img_xreal)
-                    corr_orig_gen = get_correlation(img_xsrc, img_xgen)
-                    corr_gen_target = get_correlation(img_xgen, img_xreal)
+                corr_orig_target = get_correlation(img_xsrc, img_xreal)
+                corr_orig_gen = get_correlation(img_xsrc, img_xgen)
+                corr_gen_target = get_correlation(img_xgen, img_xreal)
 
-                    classe_orig = class_change(x)
-                    classe_target = class_change(x_r)
-                    classe_gen = class_change(x_gen)
+                classe_orig = class_change(config.model_param, x)
+                classe_target = class_change(config.model_param, x_r)
+                classe_gen = class_change(config.model_param, x_gen)
 
-                    df_img = pd.DataFrame({
-                        'orig_label': [c_idx],
-                        'target_label': [c_t_idx],
-                        'orig-target': [corr_orig_target],
-                        'orig-gen': [corr_orig_gen],
-                        'gen-target': [corr_gen_target],
-                        'gen_pred':[classe_gen],
-                        'orig_pred':[classe_orig],
-                        'target_pred':[classe_target]
-                        })
+                df_img = pd.DataFrame({
+                    'orig_label': [c_idx],
+                    'target_label': [c_t_idx],
+                    'orig-target': [corr_orig_target],
+                    'orig-gen': [corr_orig_gen],
+                    'gen-target': [corr_gen_target],
+                    'gen_pred':[classe_gen],
+                    'orig_pred':[classe_orig],
+                    'target_pred':[classe_target]
+                    })
 
-                    df_metrics = pd.concat(
-                        [df_metrics, df_img], 
-                        ignore_index=True
-                        ) 
+                df_metrics = pd.concat(
+                    [df_metrics, df_img], 
+                    ignore_index=True
+                    ) 
 
-                    print(df_metrics)
+                print(df_metrics)
 
-                    df_metrics.to_csv(f'{config.sample_dir}/df_metrics-{config.dataset}-w{w}.csv')
+                df_metrics.to_csv(f'{config.sample_dir}/df_metrics-{config.dataset}.csv')
 
-                    # if n%50==0:
+                if n%50==0:
 
-                    #     plotting.plot_glass_brain(
-                    #         img_xsrc, 
-                    #         figure=fig, 
-                    #         cmap=nilearn_cmaps['cold_hot'], 
-                    #         plot_abs=False, 
-                    #         title=f'Original, classe {dataset.label_list[c_idx]}',
-                    #         axes=ax[0],
-                    #         display_mode = 'z')
+                    plotting.plot_glass_brain(
+                        img_xsrc, 
+                        figure=fig, 
+                        cmap=nilearn_cmaps['cold_hot'], 
+                        plot_abs=False, 
+                        title=f'Original, classe {dataset.label_list[c_idx]}',
+                        axes=ax[0],
+                        display_mode = 'z')
 
-                    #     plotting.plot_glass_brain(
-                    #         img_xgen, 
-                    #         figure=fig, 
-                    #         cmap=nilearn_cmaps['cold_hot'], 
-                    #         plot_abs=False, 
-                    #         title=f'Generated, classe {dataset.label_list[c_t_idx]}',
-                    #         axes=ax[1],
-                    #         display_mode = 'z')
+                    plotting.plot_glass_brain(
+                        img_xgen, 
+                        figure=fig, 
+                        cmap=nilearn_cmaps['cold_hot'], 
+                        plot_abs=False, 
+                        title=f'Generated, classe {dataset.label_list[c_t_idx]}',
+                        axes=ax[1],
+                        display_mode = 'z')
 
-                    #     plotting.plot_glass_brain(
-                    #         img_xreal, 
-                    #         figure=fig, 
-                    #         cmap=nilearn_cmaps['cold_hot'], 
-                    #         plot_abs=False, 
-                    #         title=f'Target, classe {dataset.label_list[c_t_idx]}',
-                    #         axes=ax[2],
-                    #         display_mode = 'z')
+                    plotting.plot_glass_brain(
+                        img_xreal, 
+                        figure=fig, 
+                        cmap=nilearn_cmaps['cold_hot'], 
+                        plot_abs=False, 
+                        title=f'Target, classe {dataset.label_list[c_t_idx]}',
+                        axes=ax[2],
+                        display_mode = 'z')
 
-                    #     plt.savefig(f'{config.sample_dir}/test-image_{n}-{config.dataset}_ep{config.test_iter}_w{w}-orig_{c_idx}-target_{c_t_idx}.png')
-                    #     plt.close()
+                    plt.savefig(f'{config.sample_dir}/test-image_{n}-{config.dataset}_ep{config.test_iter}_orig_{c_idx}-target_{c_t_idx}.png')
+                    plt.close()
 
         
 if __name__ == "__main__":
@@ -464,6 +282,8 @@ if __name__ == "__main__":
     parser.add_argument('--drop_prob', type=float, default=0.1, help='probability drop')
     parser.add_argument('--ws_test', type=list, default=[0.0, 2.0], help='weight strengh for sampling')
     parser.add_argument('--test_iter', type=int, default=10, help='epoch of model to test')
+    parser.add_argument('--model_param', type=str, default='../pipeline_classification/data/derived/model_b-64_lr-1e-04_epochs_100.pt', 
+        help='epoch of classifier embedding')
 
     config = parser.parse_args()
 
