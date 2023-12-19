@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, PillowWriter
 import numpy as np
 from model import ContextUnet
+import importlib
 import sys 
 sys.path.insert(0, '../pipeline_classification/src')
-import importlib
 
 
 def ddpm_schedules(beta1, beta2, T):
@@ -64,6 +64,7 @@ class DDPM(nn.Module):
 
         self.loss_mse = nn.MSELoss()
 
+        sys.path.insert(0, '../pipeline_classification/src')
         package = 'lib.model'
         md = importlib.import_module(package)
 
