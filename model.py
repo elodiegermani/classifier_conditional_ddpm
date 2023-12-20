@@ -143,10 +143,10 @@ class ContextUnet(nn.Module):
         #c = nn.functional.one_hot(c, num_classes=self.n_classes).type(torch.float)
         
         # mask out context if context_mask == 1
-        # context_mask = context_mask[:, None]
-        # context_mask = context_mask.repeat(1,self.n_classes)
-        # context_mask = (-1*(1-context_mask)) # need to flip 0 <-> 1
-        # c = c * context_mask
+        context_mask = context_mask.unsqueeze(1).repeat(1, cemb.shape[1])
+        
+        context_mask = (-1*(1-context_mask)) # need to flip 0 <-> 1
+        cemb = cemb * context_mask
         
         # embed context, time step
         cemb1 = self.contextembed1(cemb).view(-1, self.n_feat * 2, 1, 1, 1)

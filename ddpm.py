@@ -98,10 +98,12 @@ class DDPM(nn.Module):
         )  # This is the x_t, which is sqrt(alphabar) x_0 + sqrt(1-alphabar) * eps
         # We should predict the "error term" from this x_t. Loss is what we return.
 
+        context_mask = torch.bernoulli(torch.zeros(cemb.shape[0]) + drop_prob).to(self.device)
+
         cemb = self.classembed(x)
         
         # return MSE between added noise, and our predicted noise
-        return self.loss_mse(noise, self.nn_model(x_t, _ts / self.n_T, cemb))
+        return self.loss_mse(noise, self.nn_model(x_t, _ts / self.n_T, cemb, context_mask))
 
     def transfer(self, source, target):
 
