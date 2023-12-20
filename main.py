@@ -100,7 +100,6 @@ def train(config):
             optim.zero_grad()
 
             x = x.to(ddpm.device)
-            c = c.to(ddpm.device)
 
             loss = ddpm(x.float())
             loss.backward()

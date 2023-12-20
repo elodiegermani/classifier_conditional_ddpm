@@ -82,7 +82,7 @@ class DDPM(nn.Module):
         # 3. load the new state dict
         regressor.load_state_dict(regressor_dict)
 
-        self.classembed = regressor 
+        self.classembed = regressor.to(self.device) 
 
     def forward(self, x):
         """
