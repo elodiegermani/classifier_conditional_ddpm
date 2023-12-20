@@ -100,7 +100,7 @@ class DDPM(nn.Module):
 
         cemb = self.classembed(x)
 
-        context_mask = torch.bernoulli(torch.zeros(cemb.shape[0]) + drop_prob).to(self.device)
+        context_mask = torch.bernoulli(torch.zeros(cemb.shape[0]) + self.drop_prob).to(self.device)
         
         # return MSE between added noise, and our predicted noise
         return self.loss_mse(noise, self.nn_model(x_t, _ts / self.n_T, cemb, context_mask))
