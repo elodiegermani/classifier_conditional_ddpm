@@ -131,7 +131,7 @@ class ContextUnet(nn.Module):
             nn.Conv3d(n_feat, self.in_channels, 3, 1, 1),
         )
 
-    def forward(self, x, t, cemb):
+    def forward(self, x, t, cemb, context_mask):
         # x is (noisy) image, c is context label, t is timestep, 
         # context_mask says which samples to block the context on
         x = self.init_conv(x)
