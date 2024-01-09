@@ -151,11 +151,12 @@ def transfer(config):
 
             for i in range(config.n_classes):
 
-                class_dataset = dataset[dataset.get_original_labels()==dataset.label_list[i]]
+                class_idx = [i for i in range(len(dataset.get_original_labels())) if dataset.get_original_labels()[i]==dataset.label_list[0]]
 
-                i_t = random.choice(range(len(class_dataset)))
 
-                x_t, c_t = class_dataset[i_t]
+                i_t = random.choice(class_idx)
+
+                x_t, c_t = dataset[i_t]
 
                 x_gen = ddpm.transfer(
                 x, x_t.unsqueeze(1) 
