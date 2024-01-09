@@ -117,9 +117,9 @@ class DDPM(nn.Module):
         cemb_list = []
 
         for x_trg in target:
-            cemb_list.append(self.classembed(x_trg.unsqueeze(1).float().to(self.device)))
+            cemb_list.append(self.classembed(x_trg.unsqueeze(1).float().to(self.device)).cpu())
 
-        cemb = torch.tensor(np.mean(cemb_list,0))
+        cemb = torch.tensor(np.mean(cemb_list,0)).to(self.device)
         #cemb = self.classembed(target.to(self.device))
 
         cemb = cemb.repeat(2,1)
