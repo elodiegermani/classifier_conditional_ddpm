@@ -179,6 +179,8 @@ def transfer(config):
                     affine
                     )
 
+                x_r, c_r = dataset[n//config.n_classes*config.n_classes+i]
+
                 img_xreal = nib.Nifti1Image(
                     np.array(
                         x_r.detach().cpu()
