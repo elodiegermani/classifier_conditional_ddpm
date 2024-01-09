@@ -289,8 +289,5 @@ if __name__ == "__main__":
     if config.mode == 'train':
         train(config)
 
-    elif config.mode == 'test':
-        sample(config)
-
     elif config.mode == 'transfer':
         transfer(config)
