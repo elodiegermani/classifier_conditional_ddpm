@@ -105,7 +105,7 @@ class DDPM(nn.Module):
         # return MSE between added noise, and our predicted noise
         return self.loss_mse(noise, self.nn_model(x_t, _ts / self.n_T, cemb, context_mask))
 
-    def transfer(self, source, target):
+    def transfer(self, source, target, guide_w = 1.0):
 
         x_i = source.to(self.device)  # 
         noise = torch.randn_like(x_i)  # eps ~ N(0, 1)
@@ -116,6 +116,12 @@ class DDPM(nn.Module):
 
         cemb = self.classembed(target.to(self.device))
 
+        context_mask = torch.zeros_like(cemb).to(self.device)
+
+        cemb = cemb.repeat(2)
+        context_mask = context_mask.repeat(2)
+        context_mask[1:] = 1.
+
         for i in range(self.n_T, 0, -1):
 
             print(f'sampling timestep {i}',end='\r')
@@ -125,7 +131,12 @@ class DDPM(nn.Module):
             z = torch.randn(*x_t.shape).to(self.device) if i > 1 else 0
 
             # split predictions and compute weighting  
-            eps = self.nn_model(x_t.float(), t_is.float(), cemb.float())
+            eps = self.nn_model(x_t.float(), t_is.float(), cemb.float(), context_mask.float())
+            eps1 = eps[:1] # first part (context_mask = 0)
+            eps2 = eps[1:] # second part (context_mask = 1)
+            eps = (1+guide_w)*eps1 - guide_w*eps2 # mix output: context mask off and context mask on
+            x_t = x_t[0:1] # Keep half of the samples 
+
             x_t = (
                 self.oneover_sqrta[i] * (x_t - eps * self.mab_over_sqrtmab[i])
                 + self.sqrt_beta_t[i] * z
