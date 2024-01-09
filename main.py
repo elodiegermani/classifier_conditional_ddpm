@@ -151,7 +151,7 @@ def transfer(config):
 
             for i in range(config.n_classes):
 
-                class_idx = [i for i in range(len(dataset.get_original_labels())) if dataset.get_original_labels()[i]==dataset.label_list[0]]
+                class_idx = [cl for cl in range(len(dataset.get_original_labels())) if dataset.get_original_labels()[cl]==dataset.label_list[i]]
 
                 i_t = random.choice(class_idx)
 
@@ -231,37 +231,36 @@ def transfer(config):
 
                 df_metrics.to_csv(f'{config.sample_dir}/df_metrics-{config.dataset}_w-{config.ws_test}.csv')
 
-                if n==n:
 
-                    plotting.plot_glass_brain(
-                        img_xsrc, 
-                        figure=fig, 
-                        cmap=nilearn_cmaps['cold_hot'], 
-                        plot_abs=False, 
-                        title=f'Original, classe {dataset.label_list[c_idx]}',
-                        axes=ax[0],
-                        display_mode = 'z')
+                plotting.plot_glass_brain(
+                    img_xsrc, 
+                    figure=fig, 
+                    cmap=nilearn_cmaps['cold_hot'], 
+                    plot_abs=False, 
+                    title=f'Original, classe {dataset.label_list[c_idx]}',
+                    axes=ax[0],
+                    display_mode = 'z')
 
-                    plotting.plot_glass_brain(
-                        img_xgen, 
-                        figure=fig, 
-                        cmap=nilearn_cmaps['cold_hot'], 
-                        plot_abs=False, 
-                        title=f'Generated, classe {dataset.label_list[c_t_idx]}',
-                        axes=ax[1],
-                        display_mode = 'z')
+                plotting.plot_glass_brain(
+                    img_xgen, 
+                    figure=fig, 
+                    cmap=nilearn_cmaps['cold_hot'], 
+                    plot_abs=False, 
+                    title=f'Generated, classe {dataset.label_list[c_t_idx]}',
+                    axes=ax[1],
+                    display_mode = 'z')
 
-                    plotting.plot_glass_brain(
-                        img_xreal, 
-                        figure=fig, 
-                        cmap=nilearn_cmaps['cold_hot'], 
-                        plot_abs=False, 
-                        title=f'Target, classe {dataset.label_list[c_t_idx]}',
-                        axes=ax[2],
-                        display_mode = 'z')
+                plotting.plot_glass_brain(
+                    img_xreal, 
+                    figure=fig, 
+                    cmap=nilearn_cmaps['cold_hot'], 
+                    plot_abs=False, 
+                    title=f'Target, classe {dataset.label_list[c_t_idx]}',
+                    axes=ax[2],
+                    display_mode = 'z')
 
-                    plt.savefig(f'{config.sample_dir}/test-image_{n}-{config.dataset}_ep{config.test_iter}_w{config.ws_test}_orig_{c_idx}-target_{c_t_idx}.png')
-                    plt.close()
+                plt.savefig(f'{config.sample_dir}/test-image_{n}-{config.dataset}_ep{config.test_iter}_w{config.ws_test}_orig_{c_idx}-target_{c_t_idx}.png')
+                plt.close()
 
         
 if __name__ == "__main__":
