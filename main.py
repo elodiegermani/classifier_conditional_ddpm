@@ -153,7 +153,9 @@ def transfer(config):
 
                 class_dataset = dataset[dataset.get_original_labels()==dataset.label_list[i]]
 
-                x_t, c_t = random.choice(class_dataset)
+                i_t = random.choice(range(len(class_dataset)))
+
+                x_t, c_t = class_dataset[i_t]
 
                 x_gen = ddpm.transfer(
                 x, x_t.unsqueeze(1) 
