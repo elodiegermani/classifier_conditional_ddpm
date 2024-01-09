@@ -153,7 +153,6 @@ def transfer(config):
 
                 class_idx = [i for i in range(len(dataset.get_original_labels())) if dataset.get_original_labels()[i]==dataset.label_list[0]]
 
-
                 i_t = random.choice(class_idx)
 
                 x_t, c_t = dataset[i_t]
@@ -232,7 +231,7 @@ def transfer(config):
 
                 df_metrics.to_csv(f'{config.sample_dir}/df_metrics-{config.dataset}_w-{config.ws_test}.csv')
 
-                if n%50==0:
+                if n==n:
 
                     plotting.plot_glass_brain(
                         img_xsrc, 
