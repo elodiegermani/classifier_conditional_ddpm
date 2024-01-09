@@ -159,7 +159,7 @@ def transfer(config):
                 x_t, c_t = dataset[i_t]
 
                 x_gen = ddpm.transfer(
-                x, x_t.unsqueeze(1) 
+                x, x_t.unsqueeze(1).float() 
                 )
 
                 fig,ax = plt.subplots(
