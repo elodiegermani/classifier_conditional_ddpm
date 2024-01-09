@@ -116,10 +116,8 @@ class DDPM(nn.Module):
 
         cemb = self.classembed(target.to(self.device))
 
-        context_mask = torch.zeros_like(cemb).to(self.device)
-
         cemb = cemb.repeat(2,1)
-        context_mask = context_mask.repeat(2,1)
+        context_mask = torch.zeros(cemb.shape[0]).to(self.device)
         context_mask[1:] = 1.
 
         for i in range(self.n_T, 0, -1):
