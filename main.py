@@ -153,12 +153,22 @@ def transfer(config):
 
                 class_idx = [cl for cl in range(len(dataset.get_original_labels())) if dataset.get_original_labels()[cl]==dataset.label_list[i]]
 
-                i_t = random.choice(class_idx)
+                i_t_list = random.sample(class_idx, config.n_C)
 
-                x_t, c_t = dataset[i_t]
+                x_t_list = []
+
+                for i_t in i_t_list:
+
+                    x_t, c_t = dataset[i_t]
+
+                    x_t_list.append(x_t)
+
+                # x_gen = ddpm.transfer(
+                # x, x_t.unsqueeze(1).float(), config.ws_test
+                # )
 
                 x_gen = ddpm.transfer(
-                x, x_t.unsqueeze(1).float(), config.ws_test
+                x, x_t_list, config.ws_test
                 )
 
                 fig,ax = plt.subplots(
@@ -199,9 +209,9 @@ def transfer(config):
 
                 if n % 50 == 0:
 
-                    nib.save(img_xgen, f'{config.sample_dir}/gen-image_{n}-{config.dataset}_ep{config.test_iter}_w{config.ws_test}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
-                    nib.save(img_xreal, f'{config.sample_dir}/trg-image_{n}-{config.dataset}_ep{config.test_iter}_w{config.ws_test}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
-                    nib.save(img_xsrc, f'{config.sample_dir}/src-image_{n}-{config.dataset}_ep{config.test_iter}_w{config.ws_test}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
+                    nib.save(img_xgen, f'{config.sample_dir}/gen-image_{n}-{config.dataset}_ep{config.test_iter}_w{config.ws_test}_n{config.n_C}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
+                    nib.save(img_xreal, f'{config.sample_dir}/trg-image_{n}-{config.dataset}_ep{config.test_iter}_w{config.ws_test}_n{config.n_C}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
+                    nib.save(img_xsrc, f'{config.sample_dir}/src-image_{n}-{config.dataset}_ep{config.test_iter}_w{config.ws_test}_n{config.n_C}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
 
                 corr_orig_target = get_correlation(img_xsrc, img_xreal)
                 corr_orig_gen = get_correlation(img_xsrc, img_xgen)
@@ -229,38 +239,38 @@ def transfer(config):
 
                 print(df_metrics)
 
-                df_metrics.to_csv(f'{config.sample_dir}/df_metrics-{config.dataset}_w-{config.ws_test}.csv')
+                df_metrics.to_csv(f'{config.sample_dir}/df_metrics-{config.dataset}_w-{config.ws_test}_n{config.n_C}.csv')
 
+                if n % 50 == 0:
+                    plotting.plot_glass_brain(
+                        img_xsrc, 
+                        figure=fig, 
+                        cmap=nilearn_cmaps['cold_hot'], 
+                        plot_abs=False, 
+                        title=f'Original, classe {dataset.label_list[c_idx]}',
+                        axes=ax[0],
+                        display_mode = 'z')
 
-                plotting.plot_glass_brain(
-                    img_xsrc, 
-                    figure=fig, 
-                    cmap=nilearn_cmaps['cold_hot'], 
-                    plot_abs=False, 
-                    title=f'Original, classe {dataset.label_list[c_idx]}',
-                    axes=ax[0],
-                    display_mode = 'z')
+                    plotting.plot_glass_brain(
+                        img_xgen, 
+                        figure=fig, 
+                        cmap=nilearn_cmaps['cold_hot'], 
+                        plot_abs=False, 
+                        title=f'Generated, classe {dataset.label_list[c_t_idx]}',
+                        axes=ax[1],
+                        display_mode = 'z')
 
-                plotting.plot_glass_brain(
-                    img_xgen, 
-                    figure=fig, 
-                    cmap=nilearn_cmaps['cold_hot'], 
-                    plot_abs=False, 
-                    title=f'Generated, classe {dataset.label_list[c_t_idx]}',
-                    axes=ax[1],
-                    display_mode = 'z')
+                    plotting.plot_glass_brain(
+                        img_xreal, 
+                        figure=fig, 
+                        cmap=nilearn_cmaps['cold_hot'], 
+                        plot_abs=False, 
+                        title=f'Target, classe {dataset.label_list[c_t_idx]}',
+                        axes=ax[2],
+                        display_mode = 'z')
 
-                plotting.plot_glass_brain(
-                    img_xreal, 
-                    figure=fig, 
-                    cmap=nilearn_cmaps['cold_hot'], 
-                    plot_abs=False, 
-                    title=f'Target, classe {dataset.label_list[c_t_idx]}',
-                    axes=ax[2],
-                    display_mode = 'z')
-
-                plt.savefig(f'{config.sample_dir}/test-image_{n}-{config.dataset}_ep{config.test_iter}_w{config.ws_test}_orig_{c_idx}-target_{c_t_idx}.png')
-                plt.close()
+                    plt.savefig(f'{config.sample_dir}/test-image_{n}-{config.dataset}_ep{config.test_iter}_w{config.ws_test}_n{config.n_C}_orig_{c_idx}-target_{c_t_idx}.png')
+                    plt.close()
 
         
 if __name__ == "__main__":
@@ -281,6 +291,7 @@ if __name__ == "__main__":
     parser.add_argument('--n_classes', type=int, default=24, help='number of classes')
     parser.add_argument('--beta', type=tuple, default=(1e-4, 0.02), help='number of classes')
     parser.add_argument('--n_T', type=int, default=500, help='number T')
+    parser.add_argument('--n_C', type=int, default=10, help='number C')
     parser.add_argument('--drop_prob', type=float, default=0.1, help='probability drop')
     parser.add_argument('--ws_test', type=int, default=1, help='weight strengh for sampling')
     parser.add_argument('--test_iter', type=int, default=10, help='epoch of model to test')
