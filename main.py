@@ -196,13 +196,13 @@ def transfer(config):
                     )
 
                 c_idx = torch.argmax(c, dim=1)[0]
-                c_t_idx = torch.argmax(c_t, dim=1)[0]
+                c_t_idx = torch.argmax(c_t, dim=0)
 
                 if n % 50 == 0:
 
-                    nib.save(img_xgen, f'{config.sample_dir}/gen-image_{n}-{config.dataset}_ep{config.test_iter}_w{w}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
-                    nib.save(img_xreal, f'{config.sample_dir}/trg-image_{n}-{config.dataset}_ep{config.test_iter}_w{w}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
-                    nib.save(img_xsrc, f'{config.sample_dir}/src-image_{n}-{config.dataset}_ep{config.test_iter}_w{w}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
+                    nib.save(img_xgen, f'{config.sample_dir}/gen-image_{n}-{config.dataset}_ep{config.test_iter}_w{config.ws_test}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
+                    nib.save(img_xreal, f'{config.sample_dir}/trg-image_{n}-{config.dataset}_ep{config.test_iter}_w{config.ws_test}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
+                    nib.save(img_xsrc, f'{config.sample_dir}/src-image_{n}-{config.dataset}_ep{config.test_iter}_w{config.ws_test}-orig_{c_idx}-target_{c_t_idx}.nii.gz')
 
                 corr_orig_target = get_correlation(img_xsrc, img_xreal)
                 corr_orig_gen = get_correlation(img_xsrc, img_xgen)
@@ -230,7 +230,7 @@ def transfer(config):
 
                 print(df_metrics)
 
-                df_metrics.to_csv(f'{config.sample_dir}/df_metrics-{config.dataset}.csv')
+                df_metrics.to_csv(f'{config.sample_dir}/df_metrics-{config.dataset}_w-{config.ws_test}.csv')
 
                 if n%50==0:
 
@@ -261,7 +261,7 @@ def transfer(config):
                         axes=ax[2],
                         display_mode = 'z')
 
-                    plt.savefig(f'{config.sample_dir}/test-image_{n}-{config.dataset}_ep{config.test_iter}_orig_{c_idx}-target_{c_t_idx}.png')
+                    plt.savefig(f'{config.sample_dir}/test-image_{n}-{config.dataset}_ep{config.test_iter}_w{config.ws_test}_orig_{c_idx}-target_{c_t_idx}.png')
                     plt.close()
 
         
