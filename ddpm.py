@@ -128,6 +128,10 @@ class DDPM(nn.Module):
 
             z = torch.randn(*x_t.shape).to(self.device) if i > 1 else 0
 
+            # double batch
+            x_t = x_t.repeat(2,1,1,1,1)
+            t_is = t_is.repeat(2,1,1,1,1)
+
             # split predictions and compute weighting  
             eps = self.nn_model(x_t.float(), t_is.float(), cemb.float(), context_mask.float())
             eps1 = eps[:1] # first part (context_mask = 0)
