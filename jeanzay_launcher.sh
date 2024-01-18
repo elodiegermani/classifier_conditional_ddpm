@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=classif-ddpm-2class-test # nom du job
+#SBATCH --job-name=classif-ddpm-2class-spm-test # nom du job
 #SBATCH --ntasks=1                   # number of MP tasks
 #SBATCH --ntasks-per-node=1          # number of MPI tasks per node
 #SBATCH --gres=gpu:1                 # number of GPUs per node
@@ -17,9 +17,9 @@ source /gpfswork/rech/gft/umh25bv/miniconda3/bin/activate /gpfswork/rech/gft/umh
 # --save_dir models-2classes --test_iter 190 --n_classes 2
 
 /gpfswork/rech/gft/umh25bv/miniconda3/envs/workEnv/bin/python3 -u /gpfswork/rech/gft/umh25bv/classifier_conditional_ddpm/main.py \
-   --mode transfer --dataset dataset_rh_2class-jeanzay --labels pipelines \
+   --mode transfer --dataset dataset_rh_2class_spm-jeanzay --labels pipelines \
    --batch_size 1 --data_dir data \
-   --sample_dir samples-2classes --save_dir models-2classes \
+   --sample_dir samples-2classes-spm --save_dir models-2classes-spm \
    --test_iter 190 --n_classes 2
 
 # /gpfswork/rech/gft/umh25bv/miniconda3/envs/workEnv/bin/python3 -u /gpfswork/rech/gft/umh25bv/classifier_conditional_ddpm/main.py \
