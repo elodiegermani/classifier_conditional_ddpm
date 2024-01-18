@@ -126,7 +126,7 @@ def transfer(config):
         )
 
     # Data loader. 
-    dataset_file = f'{config.data_dir}/valid-{config.dataset}.csv'
+    dataset_file = f'{config.data_dir}/test-{config.dataset}.csv'
     dataset = ClassifDataset(
         dataset_file, 
         config.labels)
