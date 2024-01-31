@@ -25,7 +25,7 @@ source /gpfswork/rech/gft/umh25bv/miniconda3/bin/activate /gpfswork/rech/gft/umh
 
 /gpfswork/rech/gft/umh25bv/miniconda3/envs/workEnv/bin/python3 -u /gpfswork/rech/gft/umh25bv/classifier_conditional_ddpm/src/main.py \
    --mode train --dataset dataset_rh_2class_30grp-jeanzay --labels pipelines \
-   --batch_size 8 --data_dir data --n_classes 4 \
+   --batch_size 8 --data_dir data --n_classes 2 \
    --n_epoch 500 --lrate 1e-5 --sample_dir samples-2classes-30grp --save_dir models-2classes-30grp
 
 # /gpfswork/rech/gft/umh25bv/miniconda3/envs/workEnv/bin/python3 -u /gpfswork/rech/gft/umh25bv/conditional_ddpm/main.py \
