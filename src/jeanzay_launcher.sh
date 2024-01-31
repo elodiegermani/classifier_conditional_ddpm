@@ -21,7 +21,7 @@ source /gpfswork/rech/gft/umh25bv/miniconda3/bin/activate /gpfswork/rech/gft/umh
    --mode transfer --dataset dataset_rh_2class-jeanzay --labels pipelines \
    --batch_size 1 --data_dir data \
    --sample_dir samples-2classes-30grp --save_dir models-2classes-30grp \
-   --test_iter 490 --n_classes 2
+   --test_iter 200 --n_classes 2
 
 # /gpfswork/rech/gft/umh25bv/miniconda3/envs/workEnv/bin/python3 -u /gpfswork/rech/gft/umh25bv/classifier_conditional_ddpm/src/main.py \
 #    --mode train --dataset dataset_rh_2class_30grp_spm-jeanzay --labels pipelines \
